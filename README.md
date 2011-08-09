@@ -74,6 +74,30 @@ You are done! The annotated file is produced on the same folder as the
 `INPUT_NOTES` file.
 
 
+Example
+-------
+The most simple note is this one:
+    <begin:note>
+    1, 5cm, 1cm, 1cm
+    This as complicated as notes get!
+    <end:note>
+
+Another note, found in [example.tex](https://github.com/cako/pdfnoter/blob/master/example.tex)
+produces the following PDF, given the input PDF has the correct size and margins.
+
+![Looks good to me!][img1]
+[img1]: http://i.imgur.com/58pDA.png
+
+To Do
+----
+* Allow relative positioning of text
+* Allow the specification of the output name
+* Add options such as "verbose"
+* Add more information on errors
+* Create `.exe` for Windows with bundled programs (and their sources!)
+* Allow comments
+    
+
 Please Contribute!
 ------------------
 This code is licensed under the GNU General Public

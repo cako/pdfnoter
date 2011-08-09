@@ -50,14 +50,14 @@ sub get_size {
     $paper_sizes{"letter"} = "letterpaper";
     $paper_sizes{"A4"} = "a4paper";
 
-    my $size_data;
+    my $width_data;
     if ($^O =~ m/win/i){
-        chomp($size_data = `pdfinfo $input_pdf`);
+        chomp($width_data = `pdfinfo $input_pdf`);
     } else {
-        chomp($size_data = `pdfinfo '$input_pdf'`);
+        chomp($width_data = `pdfinfo '$input_pdf'`);
     }
     # The numbers are (?<width>\d+(\.\d+) and the paper size is (?<paper>\w+)
-    $size_data =~ /Page \s size: \s+ (?<width>\d+(\.\d+)?) \s x \s (?<len>\d+(\.\d+)?) \s pts \s+ ( \( (?<paper>\w+) \) )?/x;
+    $width_data =~ /Page \s size: \s+ (?<width>\d+(\.\d+)?) \s x \s (?<len>\d+(\.\d+)?) \s pts \s+ ( \( (?<paper>\w+) \) )?/x;
     my $width = $+{width};
     my $len = $+{len};
     my $paper;
@@ -174,7 +174,7 @@ $tex_contents .= $tex_contents_rest;
 # The arrays consist of all notes that are to be places on the page specified by the key
 my %pages;
 for my $note_number (sort keys %notes){
-    $notes{$note_number} =~ /^(?<page>.+),( )?(?<size>.+),( )?(?<x>.+),( )?(?<y>.+)\n/;
+    $notes{$note_number} =~ /^(?<page>.+)(\s+)?,(\s+)?(?<size>.+)(\s+)?,(\s+)?(?<x>.+)(\s+)?,(\s+)?(?<y>.+)(\s+)?\n/;
     my $page_number = $+{page};
     push @{ $pages{"$page_number"} }, $note_number;
     #say "Added note $note_number to page $page_number.";
@@ -197,19 +197,32 @@ for my $page (sort keys %pages){
 
     for my $note_number (@{ $pages{$page} }){
         $notes{$note_number} =~ /^(?<page>.+),( )?(?<size>.+),( )?(?<x>.+),( )?(?<y>.+)\n/;
-        my ($size, $x_pos, $y_pos) = ($+{size}, $+{x}, $+{y});
-        my ($x_unit, $y_unit);
+        my ($width, $x_pos, $y_pos) = ($+{size}, $+{x}, $+{y});
+        my ($width_unit, $x_unit, $y_unit);
+
+        $width =~ /(?<w>.+)(?<w_unit>\w{2})/; 
+        ($width, $width_unit) = ($+{w}, $+{w_unit});
+
         $x_pos =~ /(?<x>.+)(?<x_unit>\w{2})/; 
         ($x_pos, $x_unit) = ($+{x}, $+{x_unit});
+
         $y_pos =~ /(?<y>.+)(?<y_unit>\w{2})/; 
         ($y_pos, $y_unit) = ($+{y}, $+{y_unit});
         #say "Note $note_number";
         #say "x_unit: $x_unit\nx value: $x_pos\ny_unit: $y_unit\ny value: $y_pos\n";
-
+        # Convert $width and $x_pos to pt so both that units match. Necessary for textpos
+        my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4, 'in', 72.27);
+        $width *= $convert_factor{"$width_unit"};
+        $x_pos *= $convert_factor{"$x_unit"};
+        say "\nwidth_unit of note $note_number : $width_unit";
+        say "x_pos_unit of note $note_number : $x_unit";
+        say "width of note $note_number : $width";
+        say "x_pos of note $note_number : $x_pos";
+        print "\n";
         $tex_contents .= "\n";
-        $tex_contents .= '\setlength{\TPHorizModule}{1' . "$x_unit\}\n";
+        $tex_contents .= '\setlength{\TPHorizModule}{1pt}' . "\n";
         $tex_contents .= '\setlength{\TPVertModule}{1' . "$y_unit\}\n";
-        $tex_contents .= '\begin{textblock}{'. $size . '}' . "($x_pos, $y_pos)";
+        $tex_contents .= '\begin{textblock}{'. $width . '}' . "($x_pos, $y_pos)";
         $tex_contents .= "\\noindent\n% $notes{$note_number}";
         $tex_contents .= '\end{textblock}';
         $tex_contents .= "\n";
@@ -236,8 +249,8 @@ print "Done.\n";
 
 print "Compiling $note_mask. ";
 my $compile = "pdflatex --output-directory $notes_dir $note_mask";
-`$compile`;
-#system "pdflatex", "--output-directory", $notes_dir, $note_mask;
+#`$compile`;
+system "pdflatex", "--output-directory", $notes_dir, $note_mask;
 print "Done.\n";
 
 print "Stamping $input_pdf with $note_mask_pdf. ";
