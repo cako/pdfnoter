@@ -85,7 +85,7 @@ The most simple note is this one:
 Another note, found in [example.tex](https://github.com/cako/pdfnoter/blob/master/example.tex)
 produces the following PDF, given the input PDF has the correct size and margins.
 
-![Looks good to me!][img1_35]
+![Looks good to me!][img1_45]
 
 [img1]: http://i.imgur.com/58pDA.png
 [img1_45]: http://i.imgur.com/Bhp3O.png
