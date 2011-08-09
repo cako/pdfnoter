@@ -76,12 +76,14 @@ You are done! The annotated file is produced on the same folder as the
 
 Example
 -------
-The most simple note is this one:
+The simplest note is this one:
 
     <begin:note>
-    1, 5cm, 1cm, 1cm
+    1, 5cm, 1cm, 2cm
     This as complicated as notes get!
     <end:note>
+
+It produces a 5cm wide container on page 1cm from the left and 2cm from the top of page 1.
 
 Another note, found in [example.tex](https://github.com/cako/pdfnoter/blob/master/example.tex)
 produces the following PDF given the background *lorem ipsum* dummy PDF.
