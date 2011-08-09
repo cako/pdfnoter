@@ -88,7 +88,7 @@ produces the following PDF, given the input PDF has the correct size and margins
 ![Looks good to me!][img1half]
 
 [img1]: http://i.imgur.com/58pDA.png
-[img1half]  http://i.imgur.com/ia3gu.png
+[img1half]:  http://i.imgur.com/ia3gu.png
 
 To Do
 ----
