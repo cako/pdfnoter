@@ -83,7 +83,7 @@ The most simple note is this one:
     <end:note>
 
 Another note, found in [example.tex](https://github.com/cako/pdfnoter/blob/master/example.tex)
-produces the following PDF, given the input PDF has the correct size and margins.
+produces the following PDF given the background "lorem ipsum" dummy PDF.
 
 ![Looks good to me!][img1_45]
 
