@@ -77,6 +77,7 @@ You are done! The annotated file is produced on the same folder as the
 Example
 -------
 The most simple note is this one:
+
     <begin:note>
     1, 5cm, 1cm, 1cm
     This as complicated as notes get!
