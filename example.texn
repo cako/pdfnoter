@@ -1,0 +1,42 @@
+This file contains the annotations to be stamped into the pdf.
+A note consists of the page number of the note, the position of the
+annotations on the page and the annotation itself.
+Everything outside the tags <begin:foo> and <end:foo> will be ignored.
+
+
+If there are any packages you might need to include on the note generation,
+enter them between the <begin:packages> and <end:packages> tags.
+Default packages are amsmath, amssymb, textpos, geometry and color.
+Be sure to also include their configurations, if needed.
+<begin:packages>
+\usepackage{tikz}
+<end:packages>
+
+
+The first line should have: PAGE, WIDTH, XPOSITION, YPOSITION.
+PAGE should be one number. XPOSITION and YPOSITION should be a number appended of a LaTeX unit. 
+WIDTH should be a bare number; the unit implied is the same unit as used in XPOSITION.
+Everything after that, until the <end:note> tag will be considered the note itself.
+
+Example 1:
+This note will place the text at the origin (upper left corner) of the first page.
+The size of the box is 10cm, so the text will wrap if it exceeds 10cm.
+<begin:note>
+2, 10, 0cm, 0cm
+\scriptsize A little annotation for the top left corner
+<end:note>
+
+Example 2:
+<begin:note>
+2, 2, 6cm, 2in
+This is a test: \(\sin(\pi) = 0\)
+<end:note>
+
+Example 3:
+<begin:note>
+1, 21, 0cm, 0.3cm
+\begin{tikzpicture}
+    \draw[step=1cm, gray, very thin]
+    (0,0) grid (21,29.7);
+\end{tikzpicture}
+<end:note>
