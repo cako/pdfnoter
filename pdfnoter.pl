@@ -211,7 +211,7 @@ for my $page (sort keys %pages){
         #say "Note $note_number";
         #say "x_unit: $x_unit\nx value: $x_pos\ny_unit: $y_unit\ny value: $y_pos\n";
         # Convert $width and $x_pos to pt so both that units match. Necessary for textpos
-        my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4, 'in', 72.27);
+        my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4, 'in', 72.27, 'bp', 1.00375, 'pc', 12, 'dd', 10.7, 'cc', 12.84, 'sp', 0.000015);
         $width *= $convert_factor{"$width_unit"};
         $x_pos *= $convert_factor{"$x_unit"};
         say "\nwidth_unit of note $note_number : $width_unit";
