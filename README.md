@@ -65,7 +65,7 @@ Instructions
 
 Write your notes in a text file, following the format specified in the
 `example.tex` example file. (The format is super simple,
-[check it out](https://github.com/cako/pdfnoter/blob/master/example.texn)!)
+[check it out](https://github.com/cako/pdfnoter/blob/master/example.tex)!)
 Then run
     
     perl pdfnoter.pl INPUT_PDF INPUT_NOTES
