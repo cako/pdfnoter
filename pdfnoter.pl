@@ -95,14 +95,12 @@ my $tex_contents = <<END;
 END
 $tex_contents = '\documentclass' . $doc_opts . '{article}' . "\n" . $tex_contents;  
 my $tex_contents_rest = <<'END';
-% GEOMETRY PACKAGE
-% Necessary to add text to any part of the document.
-\usepackage{geometry}
-\geometry{papersize={\pagewidth pt,\pagelength pt}, total={\pagewidth pt,\pagelength pt}, scale=1}
-
-\usepackage[absolute]{textpos}
 
 % PACKAGES
+\usepackage{geometry}
+\geometry{papersize={\pagewidth pt,\pagelength pt}, total={\pagewidth pt,\pagelength pt}, scale=1}
+\usepackage[absolute]{textpos}
+
 \usepackage{amsmath}  
 \usepackage{amssymb}
 \usepackage{color}
