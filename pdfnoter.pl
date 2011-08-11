@@ -18,7 +18,7 @@
 #                                                                              #
 #==============================================================================#
 
-use 5.010;
+#use 5.010;
 use strict;
 use warnings;
 use File::Spec;
@@ -87,7 +87,7 @@ die "$input_pdf does not exist." unless (-e $input_pdf);
 my $pages = &get_number_of_pages($input_pdf);  
 my ($width, $len, $doc_opts) = &get_size($input_pdf);
 
-print "Generating auxiliary .tex mask from $annotations_file. ";
+print "Generating auxiliary LaTeX mask from $annotations_file. ";
 my $tex_contents = <<END;
 \\newcommand\{\\numberofpages\}\{$pages\}
 \\newcommand\{\\pagewidth\}\{$width\}
@@ -214,11 +214,11 @@ for my $page (sort keys %pages){
         my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4, 'in', 72.27, 'bp', 1.00375, 'pc', 12, 'dd', 10.7, 'cc', 12.84, 'sp', 0.000015);
         $width *= $convert_factor{"$width_unit"};
         $x_pos *= $convert_factor{"$x_unit"};
-        say "\nwidth_unit of note $note_number : $width_unit";
-        say "x_pos_unit of note $note_number : $x_unit";
-        say "width of note $note_number : $width";
-        say "x_pos of note $note_number : $x_pos";
-        print "\n";
+        #say "\nwidth_unit of note $note_number : $width_unit";
+        #say "x_pos_unit of note $note_number : $x_unit";
+        #say "width of note $note_number : $width";
+        #say "x_pos of note $note_number : $x_pos";
+        #print "\n";
         $tex_contents .= "\n";
         $tex_contents .= '\setlength{\TPHorizModule}{1pt}' . "\n";
         $tex_contents .= '\setlength{\TPVertModule}{1' . "$y_unit\}\n";
@@ -249,8 +249,8 @@ print "Done.\n";
 
 print "Compiling $note_mask. ";
 my $compile = "pdflatex --output-directory $notes_dir $note_mask";
-#`$compile`;
-system "pdflatex", "--output-directory", $notes_dir, $note_mask;
+`$compile`;
+#system "pdflatex", "--output-directory", $notes_dir, $note_mask;
 print "Done.\n";
 
 print "Stamping $input_pdf with $note_mask_pdf. ";
