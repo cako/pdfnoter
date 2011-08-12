@@ -209,16 +209,7 @@ for my $note_number (sort keys %notes){
     $notes{$note_number} =~ /^(?<page>.+)(\s+)?,(\s+)?(?<size>.+)(\s+)?,(\s+)?(?<x>.+)(\s+)?,(\s+)?(?<y>.+)(\s+)?\n/;
     my $page_number = $+{page};
     push @{ $pages{"$page_number"} }, $note_number;
-    #say "Added note $note_number to page $page_number.";
 }
-
-#for my $page (keys %pages){
-    #say "Page $page : ";
-    #for my $i (0..$#{ $pages{$page} } ){
-        #print "\tNote $i is: $pages{$page}[$i]"; 
-    #}
-    #print "\n";
-#}
 
 for my $page (sort keys %pages){
     if ($page > $pages){
@@ -249,8 +240,7 @@ for my $page (sort keys %pages){
         for my $var (sort keys %variables){
             die "Value not found for $var" unless $variables{$var};
         }
-        #say "Note $note_number";
-        #say "x_unit: $x_unit\nx value: $x_pos\ny_unit: $y_unit\ny value: $y_pos\n";
+
         my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4,
                               'in', 72.27, 'bp', 1.00375, 'pc', 12,
                               'dd', 10.7, 'cc', 12.84, 'sp', 0.000015,
@@ -258,6 +248,7 @@ for my $page (sort keys %pages){
         for my $unit ($width_unit, $x_unit, $y_unit){
             die "Unit \"$unit\" does not exist." if not exists $convert_factor{$unit};
         }
+
         # Convert $width and $x_pos to pt so both that units match. Necessary for textpos
         if ($width_unit eq '%'){
             $width *= $pagewidth/100;
