@@ -23,6 +23,7 @@ use strict;
 use warnings;
 use File::Spec;
 use File::Basename;
+use Getopt::Long;
 
 # Preliminary hash for paper sizes. Incomplete.
 sub get_number_of_pages {
@@ -76,30 +77,61 @@ sub get_size {
 }
 
 # Begin MAIN
-die "Not enough options" if (scalar (@ARGV) < 2);
-my ($input_pdf, $annotations_file) = @ARGV;
+
+# 3 levels of verbose
+# 0 shows nothing
+# 1 shows some things but does not include latex output
+# 2 shows latex output and everything it's doing.
+my $verbose = 1;
+my $box = 0;
+my $input_pdf = '';
+my $annotations_file = '';
+my $output = '';
+GetOptions('verbose|v:+' => \$verbose, # Sets $verbose to int. If value is ommited, increase by 1.
+           'box|b' => \$box,
+           'pdf|p=s' => \$input_pdf, 
+           'notes|n=s' => \$annotations_file,
+           'output|o=s' => \$output);
+
+# Files and folders
+if (not $input_pdf and not $annotations_file){
+    die "Not enough options" if (scalar (@ARGV) < 2);
+    ($input_pdf, $annotations_file) = @ARGV;
+} elsif (not $input_pdf) {
+    $input_pdf = shift @ARGV;
+} elsif (not $annotations_file) {
+    $annotations_file = shift @ARGV;
+}
 die "$annotations_file does not exist." unless (-e $annotations_file);
 die "$input_pdf does not exist." unless (-e $input_pdf);
-#say "file: $annotations_file";
-#say "pdf: $input_pdf";
+
+my $notes_dir = dirname($annotations_file);
+basename($input_pdf) =~ /(.+)\.pdf/;
+$output = File::Spec->catfile($notes_dir, $1 . "_annotated.pdf") unless $output;
+my $note_mask = File::Spec->catfile($notes_dir, basename($annotations_file) . "_mask.tex");
+$note_mask =~ /(.+)\.tex/;
+my $note_mask_pdf = "$1.pdf";
 
 # PDF info
 my $pages = &get_number_of_pages($input_pdf);  
-my ($width, $len, $doc_opts) = &get_size($input_pdf);
+my ($pagewidth, $pagelen, $doc_opts) = &get_size($input_pdf);
 
-print "Generating auxiliary LaTeX mask from $annotations_file. ";
+# Generate mask
+print "Generating auxiliary LaTeX mask from $annotations_file. " if $verbose >= 1;
 my $tex_contents = <<END;
 \\newcommand\{\\numberofpages\}\{$pages\}
-\\newcommand\{\\pagewidth\}\{$width\}
-\\newcommand\{\\pagelength\}\{$len\}
+\\newcommand\{\\pagewidth\}\{$pagewidth\}
+\\newcommand\{\\pagelength\}\{$pagelen\}
 END
 $tex_contents = '\documentclass' . $doc_opts . '{article}' . "\n" . $tex_contents;  
+if ($box) {
+    $tex_contents .= "\n% PACKAGES\n\\usepackage[absolute,showboxes]{textpos}";
+} else {
+    $tex_contents .= "\n% PACKAGES\n\\usepackage[absolute]{textpos}";
+}
 my $tex_contents_rest = <<'END';
-
-% PACKAGES
 \usepackage{geometry}
 \geometry{papersize={\pagewidth pt,\pagelength pt}, total={\pagewidth pt,\pagelength pt}, scale=1}
-\usepackage[absolute]{textpos}
 
 \usepackage{amsmath}  
 \usepackage{amssymb}
@@ -116,6 +148,7 @@ my %notes;
 my %in_tags;
 $notes{'packages'} = ''; # Initialize 'packages' to not mess up notes offset.
 while (<ANNOT>) {
+    print "Processing $annotations_file. " if $verbose >= 2;
     my $line = $_;
     if ($line =~ /^<begin:packages>/){
         $in_tags{'packages'} = 1;
@@ -138,6 +171,7 @@ while (<ANNOT>) {
 }
 close  ANNOT
     or warn "$0 : failed to close input file '$annotations_file' : $!\n";
+print "Done.\n" if $verbose >= 2;
 
 $tex_contents .= $notes{'packages'};
 delete $notes{'packages'};
@@ -194,36 +228,62 @@ for my $page (sort keys %pages){
     $tex_contents .= '\putonpage{' . $page . "\}\{\n";
 
     for my $note_number (@{ $pages{$page} }){
+        print "Writing note $note_number. " if $verbose >= 2;
         $notes{$note_number} =~ /^(?<page>.+),( )?(?<size>.+),( )?(?<x>.+),( )?(?<y>.+)\n/;
         my ($width, $x_pos, $y_pos) = ($+{size}, $+{x}, $+{y});
         my ($width_unit, $x_unit, $y_unit);
 
-        $width =~ /(?<w>.+)(?<w_unit>\w{2})/; 
+        $width =~ /(?<w>\d+(\.\d*)?)(?<w_unit>\D{1,2})/; 
         ($width, $width_unit) = ($+{w}, $+{w_unit});
 
-        $x_pos =~ /(?<x>.+)(?<x_unit>\w{2})/; 
+        $x_pos =~ /(?<x>\d+(\.\d*)?)(?<x_unit>\D{1,2})/; 
         ($x_pos, $x_unit) = ($+{x}, $+{x_unit});
 
-        $y_pos =~ /(?<y>.+)(?<y_unit>\w{2})/; 
+        $y_pos =~ /(?<y>\d+(\.\d*)?)(?<y_unit>\D{1,2})/; 
         ($y_pos, $y_unit) = ($+{y}, $+{y_unit});
+
+        my %variables = ("width", $width, "width unit", $width_unit,
+                         "x position", $x_pos, "x unit", $x_unit,
+                         "y position", $y_pos, "y unit", $y_unit);
+
+        for my $var (sort keys %variables){
+            die "Value not found for $var" unless $variables{$var};
+        }
         #say "Note $note_number";
         #say "x_unit: $x_unit\nx value: $x_pos\ny_unit: $y_unit\ny value: $y_pos\n";
+        my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4,
+                              'in', 72.27, 'bp', 1.00375, 'pc', 12,
+                              'dd', 10.7, 'cc', 12.84, 'sp', 0.000015,
+                              '%', 'dummy value');
+        for my $unit ($width_unit, $x_unit, $y_unit){
+            die "Unit \"$unit\" does not exist." if not exists $convert_factor{$unit};
+        }
         # Convert $width and $x_pos to pt so both that units match. Necessary for textpos
-        my %convert_factor = ('pt', 1, 'mm', 2.84, 'cm', 28.4, 'in', 72.27, 'bp', 1.00375, 'pc', 12, 'dd', 10.7, 'cc', 12.84, 'sp', 0.000015);
-        $width *= $convert_factor{"$width_unit"};
-        $x_pos *= $convert_factor{"$x_unit"};
-        #say "\nwidth_unit of note $note_number : $width_unit";
-        #say "x_pos_unit of note $note_number : $x_unit";
-        #say "width of note $note_number : $width";
-        #say "x_pos of note $note_number : $x_pos";
-        #print "\n";
+        if ($width_unit eq '%'){
+            $width *= $pagewidth/100;
+        } else {
+            $width *= $convert_factor{"$width_unit"};
+        }
+        if ($x_unit eq '%'){
+            $x_pos *= $pagewidth/100;
+        } else {
+            $x_pos *= $convert_factor{"$x_unit"};
+        }
+        # Convert $y_pos if in %
+        $y_pos *= $pagelen/100 if ($y_unit eq '%');
+
         $tex_contents .= "\n";
         $tex_contents .= '\setlength{\TPHorizModule}{1pt}' . "\n";
-        $tex_contents .= '\setlength{\TPVertModule}{1' . "$y_unit\}\n";
+        if ($y_unit eq '%'){
+            $tex_contents .= '\setlength{\TPVertModule}{1pt}' . "\n";
+        } else{
+            $tex_contents .= '\setlength{\TPVertModule}{1' . "$y_unit\}\n";
+        }
         $tex_contents .= '\begin{textblock}{'. $width . '}' . "($x_pos, $y_pos)";
         $tex_contents .= "\\noindent\n% $notes{$note_number}";
         $tex_contents .= '\end{textblock}';
         $tex_contents .= "\n";
+        print "Done.\n" if $verbose >= 2;
     }
 
     $tex_contents .= '}' . "\n";
@@ -231,31 +291,28 @@ for my $page (sort keys %pages){
 
 $tex_contents .= "\n" . '\multistamp{\numberofpages}' . "\n" . '\end{document}';
     
-my $notes_dir = dirname($annotations_file);
-basename($input_pdf) =~ /(.+)\.pdf/;
-my $annotated = File::Spec->catfile($notes_dir, $1 . "_annotated.pdf");
-my $note_mask = File::Spec->catfile($notes_dir, basename($annotations_file) . "_mask.tex");
-$note_mask =~ /(.+)\.tex/;
-my $note_mask_pdf = $1 . ".pdf";
 
 open  NOTE_MASK, '>', $note_mask
     or die  "$0 : failed to open  input file '$note_mask' : $!\n";
 print NOTE_MASK $tex_contents;
 close  NOTE_MASK
     or warn "$0 : failed to close output file '$note_mask' : $!\n";
-print "Done.\n";
+print "Done.\n" if $verbose >= 1;
 
-print "Compiling $note_mask. ";
+print "Compiling $note_mask. " if $verbose >= 1;
 my $compile = "pdflatex --output-directory $notes_dir $note_mask";
-`$compile`;
-#system "pdflatex", "--output-directory", $notes_dir, $note_mask;
-print "Done.\n";
+if ($verbose >= 2) {
+    system "pdflatex", "--output-directory", $notes_dir, $note_mask;
+} else {
+    `$compile`;
+}
+print "Done.\n" if $verbose >= 1;
 
-print "Stamping $input_pdf with $note_mask_pdf. ";
-system "pdftk", $input_pdf, "multistamp", File::Spec->catfile($notes_dir, $note_mask_pdf), "output", $annotated;
-print "Done.\n";
+print "Stamping $input_pdf with $note_mask_pdf and saving that to $output. " if $verbose >= 1;
+system "pdftk", $input_pdf, "multistamp", File::Spec->catfile($notes_dir, $note_mask_pdf), "output", $output;
+print "Done.\n" if $verbose >= 1;
 
-print "Removing auxiliary files. ";
+print "Removing auxiliary files. " if $verbose >= 1;
 $note_mask =~ /(.+)\.tex/;
 for my $aux ( "$1.aux", "$1.log", "$1.out", "$1.pdf", "$1.tex" ){
     unlink File::Spec->catfile($notes_dir, $aux);
