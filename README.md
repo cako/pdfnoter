@@ -95,10 +95,6 @@ produces the following PDF given the background *lorem ipsum* dummy PDF.
 
 To Do
 ----
-* Allow relative positioning of text
-* Allow the specification of the output name
-* Add options such as "verbose"
-* Add more information on errors
 * Create `.exe` for Windows with bundled programs (and their sources!)
 * Allow comments
     
